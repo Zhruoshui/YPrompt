@@ -31,7 +31,7 @@ const app = createApp(App)
 app.use(pinia)
 
 // 路由守卫（在Pinia注册后设置）
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // 动态导入authStore以避免循环依赖
   const { useAuthStore } = await import('@/stores/authStore')
   const authStore = useAuthStore()

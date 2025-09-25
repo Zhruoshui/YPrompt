@@ -372,13 +372,7 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
 })
 
-// Watch props changes
-const unwatchShow = () => {
-  const stopWatching = () => {
-    updateShow()
-  }
-  return stopWatching
-}
+// Note: Props watching is handled in onMounted
 
 // Expose close method
 defineExpose({
