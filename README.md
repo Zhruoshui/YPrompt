@@ -1,31 +1,14 @@
+
 # YPrompt - 智能提示词生成工具
 
 基于AI对话引导挖掘用户需求的专业提示词生成系统，基于《Architecting Intelligence: A Definitive Guide to the Art and Science of Elite Prompt Engineering》理论生成高质量的AI提示词。
 
-## 一键部署
+## 项目来源
+### **fork自 [fish2018/YPrompt](https://github.com/fish2018/YPrompt)**，并在此基础上进行了一些改进和优化。请给原作者点个 Star 支持一下！
 
-在 Github 上先[![Fork me on GitHub](https://raw.githubusercontent.com/fishforks/fish2018/refs/heads/main/forkme.png)](https://github.com/fish2018/YPrompt/fork)本项目，并点上 Star !!!
+## 项目在原版上的改进项
+- **登录认证**: 登录验证和会话时间管理
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/fish2018/YPrompt&build-command=npm%20run%20build&install-command=npm%20install&output-directory=dist)
-
-**Vercel 部署步骤**
-1. Fork 本仓库到您的 GitHub 账户
-2. 登录 Vercel，点击 "New Project"
-3. 导入您的仓库
-4. 配置构建参数：
-   - Install Command: `npm install`
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-5. 点击 "Deploy"
-
-## 截图
-**PC端**  
-  
-![](imgs/pc.gif)
-
-**移动端**  
-
-![](imgs/mobile.gif)
 
 ## 核心功能
 

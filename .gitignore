@@ -2,3 +2,5 @@
 node_modules
 /dist
 pnpm-lock.yaml
+centos7-security-guide.md
+deploy.ps1
