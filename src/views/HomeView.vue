@@ -12,8 +12,16 @@
             <p class="text-sm lg:text-base text-gray-600">AI引导式对话，帮您构建完美的提示词</p>
           </div>
           
-          <!-- 模型选择器 -->
+          <!-- 模型选择器和用户信息 -->
           <div class="flex items-center gap-2 flex-shrink-0 flex-wrap sm:flex-nowrap">
+            <!-- 会话信息（桌面端显示） -->
+            <div class="hidden lg:flex items-center text-xs text-gray-500 mr-2">
+              <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800">
+                <span class="w-2 h-2 bg-green-400 rounded-full mr-1.5"></span>
+                会话剩余: {{ authStore.remainingTime }}分钟
+              </span>
+            </div>
+            
             <label class="text-sm font-medium text-gray-700 whitespace-nowrap">AI模型:</label>
             <select
               v-model="settingsStore.selectedProvider"
@@ -45,6 +53,60 @@
                 {{ model.name }}
               </option>
             </select>
+            
+            <!-- 用户菜单 -->
+            <div class="relative" ref="userMenuRef">
+              <button
+                @click="showUserMenu = !showUserMenu"
+                class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <User class="w-4 h-4 mr-1" />
+                <span class="hidden sm:inline">{{ authStore.getConfig().username }}</span>
+                <ChevronDown class="w-4 h-4 ml-1" />
+              </button>
+              
+              <!-- 用户菜单下拉 -->
+              <div
+                v-if="showUserMenu"
+                class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+              >
+                <!-- 会话信息（移动端显示） -->
+                <div class="lg:hidden px-3 py-2 border-b border-gray-100">
+                  <div class="flex items-center text-xs text-gray-500">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-100 text-green-800">
+                      <span class="w-2 h-2 bg-green-400 rounded-full mr-1.5"></span>
+                      会话剩余: {{ authStore.remainingTime }}分钟
+                    </span>
+                  </div>
+                </div>
+                
+                <button
+                  @click="extendSession"
+                  class="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <Clock class="w-4 h-4 mr-2" />
+                  延长会话
+                </button>
+                
+                <button
+                  @click="showAdminPanel"
+                  class="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <Shield class="w-4 h-4 mr-2" />
+                  管理员设置
+                </button>
+                
+                <hr class="my-1" />
+                
+                <button
+                  @click="logout"
+                  class="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  <LogOut class="w-4 h-4 mr-2" />
+                  退出登录
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -105,6 +167,12 @@
     
     <!-- 通知容器 -->
     <NotificationContainer />
+    
+    <!-- 管理员面板 -->
+    <AdminPanel 
+      :show="showAdminPanelModal" 
+      @close="showAdminPanelModal = false" 
+    />
   </div>
 </template>
 
@@ -113,18 +181,30 @@ import ChatInterface from '@/components/ChatInterface.vue'
 import PreviewPanel from '@/components/PreviewPanel.vue'
 import SettingsModal from '@/components/SettingsModal.vue'
 import NotificationContainer from '@/components/NotificationContainer.vue'
+import AdminPanel from '@/components/AdminPanel.vue'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { usePromptStore } from '@/stores/promptStore'
-import { onMounted, computed, ref, watch } from 'vue'
-import { ChevronDown } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/authStore'
+import { useNotificationStore } from '@/stores/notificationStore'
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { ChevronDown, User, Clock, LogOut, Shield } from 'lucide-vue-next'
 
+const router = useRouter()
 const settingsStore = useSettingsStore()
 const promptStore = usePromptStore()
+const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 // 移动端折叠状态管理
 const isMobile = ref(false)
 const chatExpanded = ref(true)  // 默认展开对话
 const previewExpanded = ref(false)  // 默认折叠预览
+
+// 用户菜单状态
+const showUserMenu = ref(false)
+const userMenuRef = ref<HTMLElement | null>(null)
+const showAdminPanelModal = ref(false)
 
 const connectionStatus = ref<'disconnected' | 'connected' | 'error'>('disconnected')
 
@@ -166,6 +246,59 @@ const checkConnection = () => {
 
 // 监听模型选择变化
 watch(() => [settingsStore.selectedProvider, settingsStore.selectedModel], checkConnection)
+
+// 登出功能
+const logout = async () => {
+  try {
+    authStore.logout()
+    notificationStore.addNotification({
+      type: 'success',
+      message: '已成功登出'
+    })
+    router.push('/login')
+  } catch (error) {
+    console.error('Logout error:', error)
+    notificationStore.addNotification({
+      type: 'error',
+      message: '登出过程中发生错误'
+    })
+  }
+  showUserMenu.value = false
+}
+
+// 延长会话
+const extendSession = () => {
+  authStore.extendSession()
+  notificationStore.addNotification({
+    type: 'success',
+    message: '会话已延长'
+  })
+  showUserMenu.value = false
+}
+
+// 显示管理员面板
+const showAdminPanel = () => {
+  showAdminPanelModal.value = true
+  showUserMenu.value = false
+}
+
+// 监听会话状态
+const checkSessionValidity = () => {
+  if (!authStore.isSessionValid) {
+    notificationStore.addNotification({
+      type: 'warning',
+      message: '会话已过期，请重新登录'
+    })
+    router.push('/login')
+  }
+}
+
+// 点击外部关闭菜单
+const handleClickOutside = (event: Event) => {
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
+    showUserMenu.value = false
+  }
+}
 
 // 检测移动端设备
 const checkMobile = () => {
@@ -220,8 +353,15 @@ watch(() => promptStore.promptData.requirementReport, (report) => {
   }
 })
 
+// 会话检查定时器
+let sessionCheckTimer: NodeJS.Timeout | null = null
+
 // 初始化
 onMounted(() => {
+  // 初始化认证状态
+  authStore.initialize()
+  
+  // 加载设置
   settingsStore.loadSettings()
   
   // 如果没有配置，显示设置界面
@@ -237,7 +377,22 @@ onMounted(() => {
   // 检查移动端
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  
+  // 点击外部事件监听
+  document.addEventListener('click', handleClickOutside)
+  
+  // 定期检查会话状态（每分钟）
+  sessionCheckTimer = setInterval(checkSessionValidity, 60000)
 
   // 对话初始化交给ChatInterface组件处理
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+  document.removeEventListener('click', handleClickOutside)
+  
+  if (sessionCheckTimer) {
+    clearInterval(sessionCheckTimer)
+  }
 })
 </script>
